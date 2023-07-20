@@ -1,11 +1,14 @@
+const dotenv = require("dotenv");
 var express = require("express"); // Express web server framework
 var request = require("request"); // "Request" library
 var cors = require("cors");
 var querystring = require("querystring");
 var cookieParser = require("cookie-parser");
 
-var client_id = ""; // Your client id
-var client_secret = ""; // Your secret
+dotenv.config();
+
+var client_id = process.env.CLIENT_ID; // Your client id
+var client_secret = process.env.CLIENT_SECRET; // Your secret
 var redirect_uri = "http://localhost:8888/callback"; // Your redirect uri
 
 /**
@@ -38,7 +41,8 @@ app.get("/login", function (req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = "user-read-private user-read-email playlist-read-private user-library-read";
+  var scope =
+    "user-read-private user-read-email playlist-read-private user-library-read playlist-read-collaborative";
   res.redirect(
     "https://accounts.spotify.com/authorize?" +
       querystring.stringify({
