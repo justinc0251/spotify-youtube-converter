@@ -1,121 +1,132 @@
 const dotenv = require("dotenv");
-var express = require("express"); // Express web server framework
-var request = require("request"); // "Request" library
-var cors = require("cors");
-var querystring = require("querystring");
-var cookieParser = require("cookie-parser");
+const express = require("express");
+const cors = require("cors");
+const querystring = require("querystring");
+const cookieParser = require("cookie-parser");
+const passport = require("passport");
+const SpotifyStrategy = require("passport-spotify").Strategy;
+const session = require("express-session");
+const { google } = require("googleapis");
 
 dotenv.config();
 
-var client_id = process.env.CLIENT_ID; // Your client id
-var client_secret = process.env.CLIENT_SECRET; // Your secret
-var redirect_uri = "http://localhost:8888/callback"; // Your redirect uri
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID; // Your Spotify client id
+const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET; // Your Spotify secret
+const spotifyRedirectUri = "http://localhost:8888/spotify-callback"; // Your Spotify redirect uri
 
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated string
- */
-var generateRandomString = function (length) {
-  var text = "";
-  var possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const youtubeClientId = process.env.YOUTUBE_CLIENT_ID; // Your YouTube client id
+const youtubeClientSecret = process.env.YOUTUBE_CLIENT_SECRET; // Your YouTube secret
+const youtubeRedirectUri = "http://localhost:8888/youtube-callback"; // Your YouTube redirect uri
 
-  for (var i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-};
+const app = express();
 
-var stateKey = "spotify_auth_state";
+app.use(
+  session({
+    secret: "secret-key", // Replace with a secret key for session encryption (you can use any string here)
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-var app = express();
-
+// Use middleware
 app
   .use(express.static(__dirname + "/public"))
   .use(cors())
   .use(cookieParser());
 
-app.get("/login", function (req, res) {
-  var state = generateRandomString(16);
-  res.cookie(stateKey, state);
+// Passport setup
+app.use(passport.initialize());
 
-  // your application requests authorization
-  var scope =
-    "user-read-private user-read-email playlist-read-private user-library-read playlist-read-collaborative";
-  res.redirect(
-    "https://accounts.spotify.com/authorize?" +
-      querystring.stringify({
-        response_type: "code",
-        client_id: client_id,
-        scope: scope,
-        redirect_uri: redirect_uri,
-        state: state,
-      })
-  );
+// Spotify Strategy for Passport
+passport.use(
+  new SpotifyStrategy(
+    {
+      clientID: spotifyClientId,
+      clientSecret: spotifyClientSecret,
+      callbackURL: spotifyRedirectUri,
+    },
+    function (accessToken, refreshToken, expires_in, profile, done) {
+      // Store the Spotify access token in the user's session or database
+      // In this example, we store it in a cookie
+      const user = { accessToken };
+      return done(null, user);
+    }
+  )
+);
+
+// Serialization and Deserialization of user in Passport
+passport.serializeUser(function (user, done) {
+  done(null, user);
 });
 
-app.get("/callback", function (req, res) {
-  // your application requests refresh and access tokens
-  // after checking the state parameter
+passport.deserializeUser(function (user, done) {
+  done(null, user);
+});
 
-  var code = req.query.code || null;
-  var state = req.query.state || null;
-  var storedState = req.cookies ? req.cookies[stateKey] : null;
+// Spotify login route
+app.get(
+  "/spotify-login",
+  passport.authenticate("spotify", {
+    scope: ["user-read-private", "playlist-read-private", "user-library-read"],
+  })
+);
 
-  if (state === null || state !== storedState) {
-    res.redirect(
-      "/#" +
-        querystring.stringify({
-          error: "state_mismatch",
-        })
-    );
+// Spotify callback route
+app.get(
+  "/spotify-callback",
+  passport.authenticate("spotify", { failureRedirect: "/login" }),
+  function (req, res) {
+    // Successful authentication, redirect to the client application with the access token
+    res.redirect("http://localhost:3000/#" + querystring.stringify(req.user));
+  }
+);
+
+const youtubeOauth2Client = new google.auth.OAuth2(
+  youtubeClientId,
+  youtubeClientSecret,
+  youtubeRedirectUri
+);
+
+let auth = false;
+
+app.get("/youtube-login", function (req, res) {
+  if (!auth) {
+    const authorizeUrl = youtubeOauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: "https://www.googleapis.com/auth/youtube",
+    });
+
+    res.redirect(authorizeUrl);
   } else {
-    res.clearCookie(stateKey);
-    var authOptions = {
-      url: "https://accounts.spotify.com/api/token",
-      form: {
-        code: code,
-        redirect_uri: redirect_uri,
-        grant_type: "authorization_code",
-      },
-      headers: {
-        Authorization:
-          "Basic " +
-          new Buffer(client_id + ":" + client_secret).toString("base64"),
-      },
-      json: true,
-    };
-
-    request.post(authOptions, function (error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var access_token = body.access_token,
-          refresh_token = body.refresh_token;
-
-        var options = {
-          url: "https://api.spotify.com/v1/me",
-          headers: { Authorization: "Bearer " + access_token },
-          json: true,
-        };
-
-        // use the access token to access the Spotify Web API
-        request.get(options, function (error, response, body) {
-          console.log(body);
-        });
-
-        // we can also pass the token to the browser to make requests from there
-        res.redirect(
-          "http://localhost:3000/#" +
-            querystring.stringify({
-              access_token: access_token,
-              refresh_token: refresh_token,
-            })
-        );
+    const oauth2 = google.oauth2({
+      auth: youtubeOauth2Client,
+      version: "v2",
+    });
+    oauth2.userinfo.get(function (err, response) {
+      if (err) {
+        console.log(err);
       } else {
+        console.log(response.data);
+      }
+    });
+  }
+});
+
+app.get("/youtube-callback", function (req, res) {
+  const code = req.query.code;
+  if (code) {
+    youtubeOauth2Client.getToken(code, function (err, tokens) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log(tokens);
+        youtubeOauth2Client.setCredentials(tokens);
+        auth = true;
         res.redirect(
           "http://localhost:3000/#" +
             querystring.stringify({
-              error: "invalid_token",
+              youtubeauth: auth,
+              youtubeAccessToken: tokens.access_token, // Send the access token as a query parameter
             })
         );
       }
@@ -123,31 +134,35 @@ app.get("/callback", function (req, res) {
   }
 });
 
-app.get("/refresh_token", function (req, res) {
-  // requesting access token from refresh token
-  var refresh_token = req.query.refresh_token;
-  var authOptions = {
-    url: "https://accounts.spotify.com/api/token",
-    headers: {
-      Authorization:
-        "Basic " +
-        new Buffer(client_id + ":" + client_secret).toString("base64"),
-    },
-    form: {
-      grant_type: "refresh_token",
-      refresh_token: refresh_token,
-    },
-    json: true,
-  };
-
-  request.post(authOptions, function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      var access_token = body.access_token;
-      res.send({
-        access_token: access_token,
-      });
-    }
+app.get("/youtube-playlist", function (req, res) {
+  const youtube = google.youtube({
+    auth: youtubeOauth2Client,
+    version: "v3",
   });
+  youtube.playlists.list(
+    {
+      part: "snippet",
+      mine: true,
+    },
+    function (err, response) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log(response.data);
+        res.send(response.data);
+      }
+    }
+  );
+});
+
+app.get("/youtube-logout", function (req, res) {
+  auth = false;
+  res.redirect(
+    "http://localhost:3000/#" +
+      querystring.stringify({
+        youtubeauth: auth,
+      })
+  );
 });
 
 console.log("Listening on 8888");

@@ -1,12 +1,12 @@
 import React from "react";
 import "./App.css";
 import Login from "./components/login/login";
-import Input from "./components/Input";
+import Header from "./components/header/Header";
 
 function App() {
   return (
     <main className="main">
-      <Input />
+      <Header />
       <Login />
     </main>
   );
