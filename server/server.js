@@ -81,6 +81,20 @@ app.get(
   }
 );
 
+app.get("/spotify-logout", function (req, res) {
+  req.logout(function (err) {
+    if (err) {
+      console.log(err);
+    }
+    res.redirect(
+      "http://localhost:3000/#" +
+        querystring.stringify({
+          spotifyauth: false,
+        })
+    );
+  });
+});
+
 const youtubeOauth2Client = new google.auth.OAuth2(
   youtubeClientId,
   youtubeClientSecret,
