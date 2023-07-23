@@ -12,6 +12,21 @@ const Login = () => {
   const [youtubeLoggedIn, setYoutubeLoggedIn] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
 
+  // Function to get the access token from localStorage
+  const getAccessTokenFromStorage = (key) => {
+    return localStorage.getItem(key);
+  };
+
+  // Function to set the access token in localStorage
+  const setAccessTokenToStorage = (key, token) => {
+    localStorage.setItem(key, token);
+  };
+
+  // Function to clear the access token from localStorage
+  const clearAccessTokenFromStorage = (key) => {
+    localStorage.removeItem(key);
+  };
+
   const getSpotifyTokenFromUrl = () => {
     const urlParams = new URLSearchParams(window.location.hash.substring(1));
     return urlParams.get("accessToken");
@@ -36,18 +51,33 @@ const Login = () => {
 
   useEffect(() => {
     const spotifyToken = getSpotifyTokenFromUrl();
-    const youtubeAccessToken = getYouTubeTokenFromUrl();
+    const youtubeToken = getYouTubeTokenFromUrl();
+
+    // Check if access tokens are already in localStorage (e.g., after a page refresh)
+    if (!spotifyToken && getAccessTokenFromStorage("spotifyAccessToken")) {
+      setSpotifyToken(getAccessTokenFromStorage("spotifyAccessToken"));
+      setSpotifyLoggedIn(true);
+    }
+
+    if (!youtubeToken && getAccessTokenFromStorage("youtubeAccessToken")) {
+      setYoutubeToken(getAccessTokenFromStorage("youtubeAccessToken"));
+      setYoutubeLoggedIn(true);
+    }
 
     window.location.hash = "";
     if (spotifyToken) {
       setSpotifyToken(spotifyToken);
       setSpotifyLoggedIn(true);
+      // Save Spotify access token to localStorage
+      setAccessTokenToStorage("spotifyAccessToken", spotifyToken);
     }
-    if (youtubeAccessToken) {
-      setYoutubeToken(youtubeAccessToken);
+    if (youtubeToken) {
+      setYoutubeToken(youtubeToken);
       setYoutubeLoggedIn(true);
+      // Save YouTube access token to localStorage
+      setAccessTokenToStorage("youtubeAccessToken", youtubeToken);
     }
-    console.log("YouTube access token:", youtubeAccessToken);
+    console.log("YouTube access token:", youtubeToken);
   }, []);
 
   useEffect(() => {
@@ -65,10 +95,14 @@ const Login = () => {
   };
 
   const spotifyLogout = () => {
+    // Clear Spotify access token from localStorage
+    clearAccessTokenFromStorage("spotifyAccessToken");
     window.location.href = "http://localhost:8888/spotify-logout";
   };
 
   const youtubeLogout = () => {
+    // Clear YouTube access token from localStorage
+    clearAccessTokenFromStorage("youtubeAccessToken");
     window.location.href = "http://localhost:8888/youtube-logout";
   };
 
@@ -97,13 +131,13 @@ const Login = () => {
           {!showPlaylists ? (
             <button onClick={getPlaylists}>Get Playlists</button>
           ) : (
-            <button>Convert</button>
+            ""
           )}
           {playlists.map((playlist) => (
             <div className="playlist-container" key={playlist.id}>
-              <input type="checkbox" />
               <img src={playlist.images[0].url} alt={playlist.name + "img"} />
               <p>{playlist.name}</p>
+              <button>Convert to YouTube Playlist</button>
             </div>
           ))}
         </div>
