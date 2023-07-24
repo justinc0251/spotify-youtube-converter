@@ -7,16 +7,17 @@ const passport = require("passport");
 const SpotifyStrategy = require("passport-spotify").Strategy;
 const session = require("express-session");
 const { google } = require("googleapis");
+const SpotifyWebApi = require("spotify-web-api-node");
 
 dotenv.config();
 
 const spotifyClientId = process.env.SPOTIFY_CLIENT_ID; // Your Spotify client id
 const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET; // Your Spotify secret
-const spotifyRedirectUri = "http://localhost:8888/spotify-callback"; // Your Spotify redirect uri
+const spotifyRedirectUri = process.env.SPOTIFY_REDIRECT_URI; // Your Spotify redirect uri
 
 const youtubeClientId = process.env.YOUTUBE_CLIENT_ID; // Your YouTube client id
 const youtubeClientSecret = process.env.YOUTUBE_CLIENT_SECRET; // Your YouTube secret
-const youtubeRedirectUri = "http://localhost:8888/youtube-callback"; // Your YouTube redirect uri
+const youtubeRedirectUri = process.env.YOUTUBE_REDIRECT_URI; // Your YouTube redirect uri
 
 const app = express();
 
@@ -38,6 +39,7 @@ app
 app.use(passport.initialize());
 
 // Spotify Strategy for Passport
+let spotifyAccessToken = null;
 passport.use(
   new SpotifyStrategy(
     {
@@ -76,7 +78,11 @@ app.get(
   "/spotify-callback",
   passport.authenticate("spotify", { failureRedirect: "/login" }),
   function (req, res) {
-    // Successful authentication, redirect to the client application with the access token
+    // Store the Spotify access token in the global variable
+    spotifyAccessToken = req.user.accessToken;
+
+    // Successful authentication, set the user object and redirect to the client application with the access token
+    req.user = { accessToken: spotifyAccessToken };
     res.redirect("http://localhost:3000/#" + querystring.stringify(req.user));
   }
 );
@@ -177,6 +183,96 @@ app.get("/youtube-logout", function (req, res) {
         youtubeauth: auth,
       })
   );
+});
+
+app.get("/convert-to-youtube", async function (req, res) {
+  const youtubeAccessToken = req.headers.authorization.replace("Bearer ", "");
+  if (!youtubeAccessToken) {
+    res
+      .status(401)
+      .json({ error: "Unauthorized - YouTube access token not provided" });
+    return;
+  }
+
+  const spotify = new SpotifyWebApi();
+  spotify.setAccessToken(spotifyAccessToken);
+
+  // Get the selected Spotify playlist from the request query parameter
+  const spotifyPlaylistId = req.query.spotifyPlaylistId;
+
+  // Get the details of the selected Spotify playlist
+  try {
+    const response = await spotify.getPlaylist(spotifyPlaylistId);
+    const playlistName = response.body.name;
+    const youtube = google.youtube({
+      auth: youtubeOauth2Client,
+      version: "v3",
+    });
+
+    // Create the YouTube playlist with the same name as the Spotify playlist
+    try {
+      const playlistResponse = await youtube.playlists.insert({
+        part: "snippet",
+        resource: {
+          snippet: {
+            title: playlistName,
+          },
+        },
+      });
+
+      const youtubePlaylistId = playlistResponse.data.id;
+      console.log("YouTube playlist created successfully");
+      console.log("YouTube playlist ID:", youtubePlaylistId);
+      res
+        .status(200)
+        .json({ message: "YouTube playlist created successfully" });
+
+      for (const track of response.body.tracks.items) {
+        try {
+          const youtubeSearchResponse = await youtube.search.list({
+            part: "snippet",
+            q: `${track.track.name} ${track.track.artists[0].name}`,
+            maxResults: 1,
+          });
+
+          if (youtubeSearchResponse.data.items.length === 0) {
+            console.log(
+              `No YouTube video found for ${track.track.name} by ${track.track.artists[0].name}`
+            );
+            continue;
+          }
+
+          const youtubeVideoId = youtubeSearchResponse.data.items[0].id.videoId;
+          youtube.playlistItems.insert({
+            part: "snippet",
+            resource: {
+              snippet: {
+                playlistId: youtubePlaylistId,
+                resourceId: {
+                  kind: "youtube#video",
+                  videoId: youtubeVideoId,
+                },
+              },
+            },
+          });
+          console.log(
+            `Added ${track.track.name} by ${track.track.artists[0].name} to YouTube playlist`
+          );
+        } catch (err) {
+          console.error(
+            `Error adding ${track.track.name} by ${track.track.artists[0].name} to YouTube playlist:`,
+            err
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error creating YouTube playlist:", err);
+      res.status(500).json({ error: "Error creating YouTube playlist" });
+    }
+  } catch (err) {
+    console.error("Error getting Spotify playlist details:", err);
+    res.status(500).json({ error: "Error getting Spotify playlist details" });
+  }
 });
 
 console.log("Listening on 8888");

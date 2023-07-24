@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import SpotifyWebApi from "spotify-web-api-js";
 import "./login.css";
+import axios from "axios";
 
 const Login = () => {
   const [spotifyToken, setSpotifyToken] = useState("");
@@ -11,6 +12,7 @@ const Login = () => {
   const [youtubeToken, setYoutubeToken] = useState("");
   const [youtubeLoggedIn, setYoutubeLoggedIn] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
+  const [conversionStatuses, setConversionStatuses] = useState({});
 
   // Function to get the access token from localStorage
   const getAccessTokenFromStorage = (key) => {
@@ -106,6 +108,26 @@ const Login = () => {
     window.location.href = "http://localhost:8888/youtube-logout";
   };
 
+  const convertToYouTubePlaylist = async (spotifyPlaylistId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8888/convert-to-youtube?spotifyPlaylistId=${spotifyPlaylistId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${youtubeToken}`,
+          },
+        }
+      );
+      console.log(response.data.message);
+      setConversionStatuses((prevStatuses) => ({
+        ...prevStatuses,
+        [spotifyPlaylistId]: "Success",
+      }));
+    } catch (error) {
+      console.error("Error converting to YouTube playlist:", error);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="spotify-login">
@@ -137,7 +159,11 @@ const Login = () => {
             <div className="playlist-container" key={playlist.id}>
               <img src={playlist.images[0].url} alt={playlist.name + "img"} />
               <p>{playlist.name}</p>
-              <button>Convert to YouTube Playlist</button>
+              <button onClick={() => convertToYouTubePlaylist(playlist.id)}>
+                {conversionStatuses[playlist.id] === "Success"
+                  ? "Success!"
+                  : "Convert"}
+              </button>
             </div>
           ))}
         </div>
