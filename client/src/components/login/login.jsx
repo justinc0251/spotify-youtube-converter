@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import SpotifyWebApi from "spotify-web-api-js";
 import "./login.css";
 import axios from "axios";
+import spotifyLogo from "../../assets/spotify.png";
+import youtubeLogo from "../../assets/youtube.png";
 
 const Login = () => {
   const [spotifyToken, setSpotifyToken] = useState("");
@@ -133,39 +135,73 @@ const Login = () => {
       <div className="spotify-login">
         {spotifyLoggedIn ? (
           <div className="user-profile">
-            <p>Welcome {displayName}!</p>
-            {userPicture && <img src={userPicture} alt="User Profile" />}{" "}
-            <button onClick={spotifyLogout}>Logout of Spotify</button>
+            <p className="welcome-text">Welcome {displayName}!</p>
+            {userPicture && (
+              <img
+                className="spotify-pic"
+                src={userPicture}
+                alt="User Profile"
+              />
+            )}{" "}
+            <button className="logout" onClick={spotifyLogout}>
+              Logout of Spotify
+            </button>
           </div>
         ) : (
-          <a href="http://localhost:8888/spotify-login">Login to Spotify</a>
+          <a href="http://localhost:8888/spotify-login">
+            <img
+              className="spotify-logo"
+              src={spotifyLogo}
+              alt="Spotify Logo"
+            />
+          </a>
         )}
       </div>
       <div className="youtube-login">
         {youtubeLoggedIn ? (
-          <button onClick={youtubeLogout}>Logout of YouTube</button>
+          <button className="logout" onClick={youtubeLogout}>
+            Logout of YouTube
+          </button>
         ) : (
-          <a href="http://localhost:8888/youtube-login">Login to Youtube</a>
+          <a href="http://localhost:8888/youtube-login">
+            <img
+              className="youtube-logo"
+              src={youtubeLogo}
+              alt="YouTube Logo"
+            />
+          </a>
         )}
       </div>
       {spotifyLoggedIn ? (
         <div className="playlists">
           {!showPlaylists ? (
-            <button onClick={getPlaylists}>Get Playlists</button>
+            <button className="get-playlists" onClick={getPlaylists}>
+              Get Playlists
+            </button>
           ) : (
-            ""
+            <button
+              className="get-playlists"
+              onClick={() => setShowPlaylists(false)}
+            >
+              Hide Playlists
+            </button>
           )}
-          {playlists.map((playlist) => (
-            <div className="playlist-container" key={playlist.id}>
-              <img src={playlist.images[0].url} alt={playlist.name + "img"} />
-              <p>{playlist.name}</p>
-              <button onClick={() => convertToYouTubePlaylist(playlist.id)}>
-                {conversionStatuses[playlist.id] === "Success"
-                  ? "Success!"
-                  : "Convert"}
-              </button>
-            </div>
-          ))}
+          {showPlaylists
+            ? playlists.map((playlist) => (
+                <div className="playlist-container" key={playlist.id}>
+                  <img
+                    src={playlist.images[0].url}
+                    alt={playlist.name + "img"}
+                  />
+                  <p>{playlist.name}</p>
+                  <button onClick={() => convertToYouTubePlaylist(playlist.id)}>
+                    {conversionStatuses[playlist.id] === "Success"
+                      ? "Success!"
+                      : "Convert"}
+                  </button>
+                </div>
+              ))
+            : null}
         </div>
       ) : null}
     </div>
