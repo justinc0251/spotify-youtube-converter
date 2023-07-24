@@ -132,6 +132,11 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      {!spotifyLoggedIn || !youtubeLoggedIn ? (
+        <h3 className="instruction">
+          Sign in to both services to get started!
+        </h3>
+      ) : null}
       <div className="spotify-login">
         {spotifyLoggedIn ? (
           <div className="user-profile">

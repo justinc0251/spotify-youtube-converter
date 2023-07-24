@@ -6,6 +6,11 @@
   gap: 10px;
 }
 
+.instruction {
+  font-size: 1.5rem;
+  margin-top: 1rem;
+}
+
 .user-profile {
   display: flex;
   flex-direction: column;
@@ -16,10 +21,12 @@
 
 .playlist-container {
   display: flex;
-  gap: 10px;
+  gap: 5px;
   margin: 10px 0;
   align-items: center;
+  justify-content: space-between; /* Align items and button to the center with equal spacing */
   width: 300px;
+  text-align: center;
 }
 
 .playlists {
