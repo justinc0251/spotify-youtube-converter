@@ -1,9 +1,21 @@
-.login-container {
+.container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
+  background-color: #f7f7f7;
+  border-radius: 10px;
+  padding: 2rem 4rem;
+  margin: 2rem;
 }
 
 .instruction {
@@ -24,8 +36,18 @@
   gap: 5px;
   margin: 10px 0;
   align-items: center;
-  justify-content: space-between; /* Align items and button to the center with equal spacing */
-  width: 300px;
+  justify-content: space-between;
+  width: 400px;
+  text-align: center;
+  flex-direction: column;
+}
+
+.playlist-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 400px;
   text-align: center;
 }
 
@@ -33,14 +55,32 @@
   margin-bottom: 3rem;
 }
 
-.spotify-logo {
+.spotify-logo,
+.youtube-logo {
   width: auto;
-  height: 100px;
+  height: 80px;
   margin: 10px 0;
+  background-color: #fcfcfd;
+  padding: 1rem;
+  border-radius: 10px;
+  border-width: 0;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px,
+    rgba(45, 35, 66, 0.3) 0 3px 3px -3px, #d6d6e7 0 -3px 0 inset;
+  color: #000000;
+  cursor: pointer;
 }
 
-.welcome-text {
+.spotify-logo:hover,
+.youtube-logo:hover {
+  box-shadow: rgba(45, 35, 66, 0.4) 0 4px 5px,
+    rgba(45, 35, 66, 0.3) 0 3px 3px -3px, #d6d6e7 0 -3px 0 inset;
+  transform: translateY(-2px);
+}
+
+.spotify-name,
+.youtube-name {
   font-size: 1.5rem;
+  font-weight: bold;
   margin-top: 1rem;
 }
 
@@ -69,6 +109,7 @@
   vertical-align: middle;
   white-space: nowrap;
   word-wrap: break-word;
+  margin-bottom: 1.5rem;
 }
 
 .logout:hover,
@@ -79,38 +120,43 @@
   transition-duration: 0.1s;
 }
 
-.logout:disabled {
+.logout:disabled,
+.get-playlists:disabled,
+.hide-playlists:disabled {
   background-color: #fafbfc;
   border-color: rgba(27, 31, 35, 0.15);
   color: #959da5;
   cursor: default;
 }
 
-.logout:active {
+.logout:active,
+.get-playlists:active,
+.hide-playlists:active {
   background-color: #edeff2;
   box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
   transition: none 0s;
 }
 
-.logout:focus {
+.logout:focus,
+.get-playlists:focus,
+.hide-playlists:focus {
   outline: 1px transparent;
 }
 
-.logout:before {
+.logout:before,
+.get-playlists:before,
+.hide-playlists:before {
   display: none;
 }
 
-.logout:-webkit-details-marker {
+.logout:-webkit-details-marker,
+.get-playlists:-webkit-details-marker,
+.hide-playlists:-webkit-details-marker {
   display: none;
 }
 
-.youtube-logo {
-  width: auto;
-  height: 90px;
-  margin: 10px 0;
-}
-
-.spotify-pic {
+.spotify-pic,
+.youtube-pic {
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -121,7 +167,8 @@
 }
 
 .playlist-container img {
-  width: 100px;
+  width: 150px;
+  border-radius: 10px;
 }
 
 .playlists {

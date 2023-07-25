@@ -8,8 +8,10 @@ import youtubeLogo from "../../assets/youtube.png";
 const Login = () => {
   const [spotifyToken, setSpotifyToken] = useState("");
   const [playlists, setPlaylists] = useState([]);
-  const [userPicture, setUserPicture] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [spotifyUserPicture, setSpotifyUserPicture] = useState("");
+  const [spotifyDisplayName, setSpotifyDisplayName] = useState("");
+  const [youtubeUserPicture, setYouTubeUserPicture] = useState("");
+  const [youtubeDisplayName, setYouTubeDisplayName] = useState("");
   const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(false);
   const [youtubeToken, setYoutubeToken] = useState("");
   const [youtubeLoggedIn, setYoutubeLoggedIn] = useState(false);
@@ -41,17 +43,40 @@ const Login = () => {
     return urlParams.get("youtubeAccessToken");
   };
 
-  const getUserProfile = useCallback(async () => {
+  const getSpotifyUserProfile = useCallback(async () => {
     const spotify = new SpotifyWebApi();
     spotify.setAccessToken(spotifyToken);
     const user = await spotify.getMe();
     console.log(user);
 
     if (user.images && user.images.length > 0) {
-      setUserPicture(user.images[0].url); // Set the user's profile picture
+      setSpotifyUserPicture(user.images[0].url); // Set the user's profile picture
     }
-    setDisplayName(user.display_name); // Set the user's display name
+    setSpotifyDisplayName(user.display_name); // Set the user's display name
   }, [spotifyToken]);
+
+  const getYouTubeUserProfile = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        "https://www.googleapis.com/youtube/v3/channels",
+        {
+          params: {
+            part: "snippet",
+            mine: true,
+            access_token: youtubeToken,
+          },
+        }
+      );
+
+      if (response.data.items && response.data.items.length > 0) {
+        const channel = response.data.items[0];
+        setYouTubeUserPicture(channel.snippet.thumbnails.default.url); // Set the user's YouTube profile picture
+        setYouTubeDisplayName(channel.snippet.title); // Set the user's YouTube display name
+      }
+    } catch (error) {
+      console.error("Error fetching YouTube user profile:", error);
+    }
+  }, [youtubeToken]);
 
   useEffect(() => {
     const spotifyToken = getSpotifyTokenFromUrl();
@@ -86,9 +111,17 @@ const Login = () => {
 
   useEffect(() => {
     if (spotifyToken) {
-      getUserProfile();
+      getSpotifyUserProfile();
     }
-  }, [spotifyToken, getUserProfile]);
+    if (youtubeToken) {
+      getYouTubeUserProfile();
+    }
+  }, [
+    spotifyToken,
+    getSpotifyUserProfile,
+    youtubeToken,
+    getYouTubeUserProfile,
+  ]);
 
   const getPlaylists = async () => {
     const spotify = new SpotifyWebApi();
@@ -131,53 +164,65 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      {!spotifyLoggedIn || !youtubeLoggedIn ? (
-        <h3 className="instruction">
-          Sign in to both services to get started!
-        </h3>
-      ) : null}
-      <div className="spotify-login">
-        {spotifyLoggedIn ? (
-          <div className="user-profile">
-            <p className="welcome-text">Welcome {displayName}!</p>
-            {userPicture && (
+    <div className="container">
+      <div className="login-container">
+        {!spotifyLoggedIn || !youtubeLoggedIn ? (
+          <h3 className="instruction">
+            Sign in to both services to get started!
+          </h3>
+        ) : null}
+        <div className="spotify-login">
+          {spotifyLoggedIn ? (
+            <div className="user-profile">
+              <p className="spotify-name">{spotifyDisplayName}</p>
+              {spotifyUserPicture && (
+                <img
+                  className="spotify-pic"
+                  src={spotifyUserPicture}
+                  alt="User Profile"
+                />
+              )}{" "}
+              <button className="logout" onClick={spotifyLogout}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <a href="http://localhost:8888/spotify-login">
               <img
-                className="spotify-pic"
-                src={userPicture}
-                alt="User Profile"
+                className="spotify-logo"
+                src={spotifyLogo}
+                alt="Spotify Logo"
               />
-            )}{" "}
-            <button className="logout" onClick={spotifyLogout}>
-              Logout of Spotify
-            </button>
-          </div>
-        ) : (
-          <a href="http://localhost:8888/spotify-login">
-            <img
-              className="spotify-logo"
-              src={spotifyLogo}
-              alt="Spotify Logo"
-            />
-          </a>
-        )}
+            </a>
+          )}
+        </div>
+        <div className="youtube-login">
+          {youtubeLoggedIn ? (
+            <div className="user-profile">
+              <p className="youtube-name">{youtubeDisplayName}</p>
+              {youtubeUserPicture && (
+                <img
+                  className="youtube-pic"
+                  src={youtubeUserPicture}
+                  alt="YouTube Profile"
+                />
+              )}
+              <button className="logout" onClick={youtubeLogout}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <a href="http://localhost:8888/youtube-login">
+              <img
+                className="youtube-logo"
+                src={youtubeLogo}
+                alt="YouTube Logo"
+              />
+            </a>
+          )}
+        </div>
       </div>
-      <div className="youtube-login">
-        {youtubeLoggedIn ? (
-          <button className="logout" onClick={youtubeLogout}>
-            Logout of YouTube
-          </button>
-        ) : (
-          <a href="http://localhost:8888/youtube-login">
-            <img
-              className="youtube-logo"
-              src={youtubeLogo}
-              alt="YouTube Logo"
-            />
-          </a>
-        )}
-      </div>
-      {spotifyLoggedIn ? (
+      {spotifyLoggedIn && youtubeLoggedIn ? (
         <div className="playlists">
           {!showPlaylists ? (
             <button className="get-playlists" onClick={getPlaylists}>
@@ -194,16 +239,20 @@ const Login = () => {
           {showPlaylists
             ? playlists.map((playlist) => (
                 <div className="playlist-container" key={playlist.id}>
-                  <img
-                    src={playlist.images[0].url}
-                    alt={playlist.name + "img"}
-                  />
-                  <p>{playlist.name}</p>
-                  <button onClick={() => convertToYouTubePlaylist(playlist.id)}>
-                    {conversionStatuses[playlist.id] === "Success"
-                      ? "Success!"
-                      : "Convert"}
-                  </button>
+                  <div className="playlist-info">
+                    <img
+                      src={playlist.images[0].url}
+                      alt={playlist.name + "img"}
+                    />
+                    <p>{playlist.name}</p>
+                    <button
+                      onClick={() => convertToYouTubePlaylist(playlist.id)}
+                    >
+                      {conversionStatuses[playlist.id] === "Success"
+                        ? "Success!"
+                        : "Convert"}
+                    </button>
+                  </div>
                 </div>
               ))
             : null}
