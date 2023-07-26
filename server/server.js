@@ -221,12 +221,7 @@ app.get("/convert-to-youtube", async function (req, res) {
       });
 
       const youtubePlaylistId = playlistResponse.data.id;
-      console.log("YouTube playlist created successfully");
       console.log("YouTube playlist ID:", youtubePlaylistId);
-      res
-        .status(200)
-        .json({ message: "YouTube playlist created successfully" });
-
       for (const track of response.body.tracks.items) {
         try {
           const youtubeSearchResponse = await youtube.search.list({
@@ -265,6 +260,11 @@ app.get("/convert-to-youtube", async function (req, res) {
           );
         }
       }
+      console.log("YouTube playlist created successfully");
+      res.status(200).json({
+        message: "YouTube playlist created successfully",
+        youtubePlaylistLink: `https://www.youtube.com/playlist?list=${youtubePlaylistId}`,
+      });
     } catch (err) {
       console.error("Error creating YouTube playlist:", err);
       res.status(500).json({ error: "Error creating YouTube playlist" });

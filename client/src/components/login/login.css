@@ -112,6 +112,12 @@
   margin-bottom: 1.5rem;
 }
 
+a {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .logout:hover,
 .get-playlists:hover,
 .hide-playlists:hover {

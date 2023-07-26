@@ -17,6 +17,7 @@ const Login = () => {
   const [youtubeLoggedIn, setYoutubeLoggedIn] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
   const [conversionStatuses, setConversionStatuses] = useState({});
+  const [playlistLinks, setPlaylistLinks] = useState({});
 
   // Function to get the access token from localStorage
   const getAccessTokenFromStorage = (key) => {
@@ -158,6 +159,13 @@ const Login = () => {
         ...prevStatuses,
         [spotifyPlaylistId]: "Success",
       }));
+      if (response.data && response.data.youtubePlaylistLink) {
+        // Update the playlist link for the specific playlist being converted
+        setPlaylistLinks((prevLinks) => ({
+          ...prevLinks,
+          [spotifyPlaylistId]: response.data.youtubePlaylistLink,
+        }));
+      }
     } catch (error) {
       console.error("Error converting to YouTube playlist:", error);
     }
@@ -245,13 +253,21 @@ const Login = () => {
                       alt={playlist.name + "img"}
                     />
                     <p>{playlist.name}</p>
-                    <button
-                      onClick={() => convertToYouTubePlaylist(playlist.id)}
-                    >
-                      {conversionStatuses[playlist.id] === "Success"
-                        ? "Success!"
-                        : "Convert"}
-                    </button>
+                    {conversionStatuses[playlist.id] === "Success" ? (
+                      <a
+                        href={playlistLinks[playlist.id]}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <button>View Playlist</button>
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => convertToYouTubePlaylist(playlist.id)}
+                      >
+                        Convert
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
