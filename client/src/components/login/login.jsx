@@ -145,6 +145,10 @@ const Login = () => {
   };
 
   const convertToYouTubePlaylist = async (spotifyPlaylistId) => {
+    setConversionStatuses((prevStatuses) => ({
+      ...prevStatuses,
+      [spotifyPlaylistId]: "Converting",
+    }));
     try {
       const response = await axios.get(
         `http://localhost:8888/convert-to-youtube?spotifyPlaylistId=${spotifyPlaylistId}`,
@@ -261,6 +265,8 @@ const Login = () => {
                       >
                         <button>View Playlist</button>
                       </a>
+                    ) : conversionStatuses[playlist.id] === "Converting" ? (
+                      <button disabled>Converting...</button>
                     ) : (
                       <button
                         onClick={() => convertToYouTubePlaylist(playlist.id)}

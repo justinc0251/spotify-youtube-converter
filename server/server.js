@@ -238,7 +238,7 @@ app.get("/convert-to-youtube", async function (req, res) {
           }
 
           const youtubeVideoId = youtubeSearchResponse.data.items[0].id.videoId;
-          youtube.playlistItems.insert({
+          await youtube.playlistItems.insert({
             part: "snippet",
             resource: {
               snippet: {
