@@ -107,7 +107,6 @@ const Login = () => {
       // Save YouTube access token to localStorage
       setAccessTokenToStorage("youtubeAccessToken", youtubeToken);
     }
-    console.log("YouTube access token:", youtubeToken);
   }, []);
 
   useEffect(() => {
@@ -116,6 +115,7 @@ const Login = () => {
     }
     if (youtubeToken) {
       getYouTubeUserProfile();
+      console.log("YouTube access token:", youtubeToken);
     }
   }, [
     spotifyToken,
@@ -154,7 +154,9 @@ const Login = () => {
         `http://localhost:8888/convert-to-youtube?spotifyPlaylistId=${spotifyPlaylistId}`,
         {
           headers: {
-            Authorization: `Bearer ${youtubeToken}`,
+            YouTubeAuthorization: `Bearer ${youtubeToken}`,
+            // Include the Spotify access token in the request headers
+            SpotifyAuthorization: `Bearer ${spotifyToken}`,
           },
         }
       );
@@ -208,6 +210,7 @@ const Login = () => {
             </a>
           )}
         </div>
+        <i class='bx bxs-chevrons-right'></i>
         <div className="youtube-login">
           {youtubeLoggedIn ? (
             <div className="user-profile">
