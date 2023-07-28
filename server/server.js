@@ -39,7 +39,6 @@ app
 app.use(passport.initialize());
 
 // Spotify Strategy for Passport
-let spotifyAccessToken = null;
 passport.use(
   new SpotifyStrategy(
     {
@@ -78,11 +77,8 @@ app.get(
   "/spotify-callback",
   passport.authenticate("spotify", { failureRedirect: "/login" }),
   function (req, res) {
-    // Store the Spotify access token in the global variable
-    spotifyAccessToken = req.user.accessToken;
-
     // Successful authentication, set the user object and redirect to the client application with the access token
-    req.user = { accessToken: spotifyAccessToken };
+    req.user = { accessToken: req.user.accessToken };
     res.redirect("http://localhost:3000/#" + querystring.stringify(req.user));
   }
 );
@@ -186,7 +182,15 @@ app.get("/youtube-logout", function (req, res) {
 });
 
 app.get("/convert-to-youtube", async function (req, res) {
-  const youtubeAccessToken = req.headers.authorization.replace("Bearer ", "");
+  const youtubeAccessToken = req.headers.youtubeauthorization.replace(
+    "Bearer ",
+    ""
+  );
+  const spotifyAccessToken = req.headers.spotifyauthorization.replace(
+    "Bearer ",
+    ""
+  );
+
   if (!youtubeAccessToken) {
     res
       .status(401)
