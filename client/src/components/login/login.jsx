@@ -40,7 +40,7 @@ const Login = () => {
   };
 
   const getYouTubeTokenFromUrl = () => {
-    const urlParams = new URLSearchParams(window.location.hash);
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
     return urlParams.get("youtubeAccessToken");
   };
 
@@ -210,7 +210,7 @@ const Login = () => {
             </a>
           )}
         </div>
-        <i class='bx bxs-chevrons-right'></i>
+        <i class="bx bxs-chevrons-right"></i>
         <div className="youtube-login">
           {youtubeLoggedIn ? (
             <div className="user-profile">
