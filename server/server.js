@@ -20,6 +20,8 @@ const youtubeClientId = process.env.YOUTUBE_CLIENT_ID; // Your YouTube client id
 const youtubeClientSecret = process.env.YOUTUBE_CLIENT_SECRET; // Your YouTube secret
 const youtubeRedirectUri = process.env.YOUTUBE_REDIRECT_URI; // Your YouTube redirect uri
 
+const webAppUrl = process.env.WEBSITE_URL; // Your web app URL
+
 const app = express();
 
 app.use(
@@ -101,7 +103,7 @@ app.get(
   function (req, res) {
     // Successful authentication, set the user object and redirect to the client application with the access token
     req.user = { accessToken: req.user.accessToken };
-    res.redirect("http://localhost:3000/#" + querystring.stringify(req.user));
+    res.redirect(webAppUrl + "#" + querystring.stringify(req.user));
   }
 );
 
@@ -111,7 +113,8 @@ app.get("/spotify-logout", function (req, res) {
       console.log(err);
     }
     res.redirect(
-      "http://localhost:3000/#" +
+      webAppUrl +
+        "#" +
         querystring.stringify({
           spotifyauth: false,
         })
@@ -136,7 +139,7 @@ app.get(
       youtubeAccessToken: req.user.accessToken, // Rename accessToken to youtubeAccessToken to differentiate from Spotify token
       spotifyAccessToken: req.session.passport.user.accessToken, // Get the Spotify access token from the session
     };
-    res.redirect("http://localhost:3000/#" + querystring.stringify(req.user));
+    res.redirect(webAppUrl + "#" + querystring.stringify(req.user));
   }
 );
 
@@ -146,7 +149,8 @@ app.get("/youtube-logout", function (req, res) {
       console.log(err);
     }
     res.redirect(
-      "http://localhost:3000/#" +
+      webAppUrl +
+        "#" +
         querystring.stringify({
           youtubeauth: false,
         })
